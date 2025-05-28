@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <title>Privatus Kalendorius</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
+    }
+
+    td, th {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .busy {
+      background-color: #ffb3b3;
+    }
+
+    .free {
+      background-color: #c6f7c3;
+    }
+
+    input[type="date"] {
+      padding: 8px;
+      font-size: 16px;
+    }
+
+    .legend {
+      margin-top: 20px;
+    }
+
+    .legend span {
+      display: inline-block;
+      padding: 5px 10px;
+      margin-right: 10px;
+      border-radius: 4px;
+    }
+
+    .l-free {
+      background-color: #c6f7c3;
+    }
+
+    .l-busy {
+      background-color: #ffb3b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Privatus rezervacijų kalendorius</h1>
+  <label for="selectedDate">Pasirinkite datą:</label>
+  <input type="date" id="selectedDate">
+  <div id="timeslots"></div>
+
+  <div class="legend">
+    <strong>Legenda:</strong>
+    <span class="l-free">Laisva</span>
+    <span class="l-busy">Užimta</span>
+  </div>
+
+  <script>
+    function generateHalfHourTimes(start = 8, end = 24) {
+      const times = [];
+      for (let hour = start; hour < end; hour++) {
+        times.push(
+          `${String(hour).padStart(2, '0')}:00`,
+          `${String(hour).padStart(2, '0')}:30`
+        );
+      }
+      return times;
+    }
+
+    const times = generateHalfHourTimes();
+    const timeslotsDiv = document.getElementById("timeslots");
+    const selectedDateInput = document.getElementById("selectedDate");
+
+    selectedDateInput.addEventListener("change", renderTimes);
+
+    function getStorageKey(date) {
+      return "calendar_" + date;
+    }
+
+    function renderTimes() {
+      const date = selectedDateInput.value;
+      if (!date) return;
+
+      const key = getStorageKey(date);
+      let reserved = JSON.parse(localStorage.getItem(key)) || [];
+
+      let html = "<table><tr><th>Laikas</th><th>Statusas (spauskite)</th></tr>";
+      times.forEach(time => {
+        const isBusy = reserved.includes(time);
+        html += `<tr>
+          <td>${time}</td>
+          <td class="${isBusy ? 'busy' : 'free'}" onclick="toggleTime('${date}', '${time}')">
+            ${isBusy ? 'Užimta' : 'Laisva'}
+          </td>
+        </tr>`;
+      });
+      html += "</table>";
+      timeslotsDiv.innerHTML = html;
+    }
+
+    function toggleTime(date, time) {
+      const key = getStorageKey(date);
+      let reserved = JSON.parse(localStorage.getItem(key)) || [];
+
+      if (reserved.includes(time)) {
+        reserved = reserved.filter(t => t !== time);
+      } else {
+        reserved.push(time);
+      }
+
+      localStorage.setItem(key, JSON.stringify(reserved));
+      renderTimes();
+    }
+  </script>
+</body>
+</html>
